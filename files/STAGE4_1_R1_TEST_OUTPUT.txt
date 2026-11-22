@@ -1,0 +1,273 @@
+[连接] HAKU@192.168.1.100:22022  主机密钥=SHA256:SsoqcZvCMSPp8EuF+eYW9gkKpkhYwtXNMFZHMN09F0I  与 known_hosts 记录=一致
+########## A. 解释器与语法编译 ##########
+Python 3.11.2
+compileall: 9 个 .py 全部编译通过
+########## B. python -m app.main --self-test ##########
+=== 阶段 4.1-R1 离线必测：任务书 28 项 + R1 新增 18 项 ===
+网络守卫: 已安装（socket.connect / create_connection / urlopen）
+  T01   [PASS] 只构造一条完整 CFST 测速命令
+  T02   [PASS] 命令不包含 -httping / -httping-code
+  T03   [PASS] 命令不包含 -dd
+  T04   [PASS] 命令不包含 -cfcolo
+  T05   [PASS] 命令使用官方 Cloudflare 下载地址
+  T06   [PASS] 命令使用完整 IPv4 文件 ip.txt
+  T01b  [PASS] execute_cfst 在 4.1 拒绝真实测速
+  T07   [PASS] SIN 正确归类 SG
+  T08   [PASS] LAX 正确归类 US
+  T09   [PASS] DEN/AMS/N/A/XYZ/HKG/空值均不自动归类
+  T09b  [PASS] 配置未猜测 HK/JP/KR 映射
+  T10   [PASS] 未知 Colo 的有效 IP 可以进入全球榜
+  T11   [PASS] 未知 Colo 不能进入地区榜
+  T12   [PASS] 全球榜数量上限 25
+  T13   [PASS] 地区榜数量上限 5
+  T14   [PASS] 排序：速度降序 / 延迟升序 / 丢包率升序 / IP 稳定
+  T15   [PASS] 速度为 0 的记录排除
+  T16   [PASS] NaN / Infinity / 负数排除
+  T17   [PASS] 非法 IP / N/A 速度排除
+  T18   [PASS] 丢包率严格按显式单位解析（ratio 0~1，不猜测）
+  T19   [PASS] 六个文件允许出现重复 IP（不跨文件去重）
+  T20   [PASS] 不生成 merged.txt / global_top15.txt
+  T21   [PASS] 六个文件格式正确（IP:443#地区-英文名-Colo-整数ms）
+  T21b  [PASS] 延迟四舍五入为整数毫秒
+  T22   [PASS] 单个文件更新失败不影响其他文件
+  T23   [PASS] 单个文件更新失败保留旧文件
+  T24   [PASS] 成功测速但地区空榜时输出空文件
+  T27   [PASS] 运行状态正确记录六个文件的独立结果
+  T25   [PASS] 完整测速失败时所有旧文件不变
+  T25b  [PASS] CSV 不完整时全部榜单不更新
+  T26   [PASS] 文件使用临时文件及 os.replace() 原子替换
+  R01   [PASS] -dn 实际命令参数为配置中的 100
+  R02   [PASS] ratio 边界 0/0.25/1/1.2/25/25%/NaN/Infinity/负数
+  R03   [PASS] percent 边界 25/25%/0/1/200/NaN/负数
+  R04   [PASS] 不得根据数值是否大于 1 自动猜测单位
+  R05   [PASS] 旧 CSV 遗留但本轮未生成新 CSV -> 六 TXT 全部保持旧内容
+  R06   [PASS] 本轮 CSV 不完整 -> 六 TXT 全部保持旧内容，历史 CSV 不变
+  R07   [PASS] 单个榜单渲染失败，其余五榜仍更新
+  R08   [PASS] 单个榜单写入失败，其余五榜仍更新且旧文件不变
+  R09   [PASS] IPv6 被 ranking / output / safety 拒绝
+  R10   [PASS] 六榜为空 / 地区榜不足 5 / 全球榜不足 25 均输出实际数量
+  R11   [PASS] 原子替换无临时文件残留；最终 TXT 保持 mkstemp 的 0o600
+  R12   [PASS] 目录中不生成 merged.txt / global_top15.txt
+  R13   [PASS] 表头解析与完整性校验共用别名逻辑（英文表头通过）
+  R14   [PASS] 本轮 CSV 时间戳陈旧 -> 拒绝发布，六 TXT 保持旧内容
+  R15   [PASS] 测速异常时历史 CSV 与六个旧 TXT 均保持不变
+  R16   [PASS] 本轮独立 CSV 生成 -> 六榜发布 -> 归档 -> 一次性路径无残留
+  R18   [PASS] 生产 -o 指向本轮一次性路径，不是 data/result.csv
+  R17   [PASS] 源码级：发布循环内逐榜独立渲染，无集体渲染/集体选榜
+  T28   [PASS] 配置检查通过
+  T28b  [PASS] 源码静态扫描：业务模块无网络/subprocess 导入
+  S01   [SKIP] 真实 CFST 完整测速 / 真实 CSV 单位验证 -> 阶段 4.4，需用户明确授权
+  S02   [SKIP] 容器 Python 3.12 集成 / 0o600 读取权限 / 只读根文件系统 -> 阶段 4.2
+--- 通过 51，失败 0，跳过 2，合计 53 ---
+--- 网络守卫拦截到的连接尝试: 0 次 ---
+--- 最终 TXT 权限实测 mode: {'HK.txt': '0o600', 'JP.txt': '0o600', 'SG.txt': '0o600', 'KR.txt': '0o600', 'US.txt': '0o600', 'global_top25.txt': '0o600'}（POSIX，断言 0o600）---
+SELF_TEST_EXIT=0
+########## C. python -m app.main --simulate ##########
+=== 阶段 4.1-R1 离线模拟（临时目录，不写 NAS 正式文件、不联网）===
+模拟 CSV：36 条有效记录 + 10 条无效记录；Colo 含 SIN/LAX/DEN/AMS/N/A/XYZ
+
+----- 场景 1：一次完整测速 -> 六个 TXT -----
+CFST 退出码=0  CSV 新鲜=True  CSV 完整=True  CSV 总记录=46  有效 IP=36
+本次最快节点: 172.66.0.1:443#UNKNOWN-Unknown-DEN-51ms
+CFST 命令(仅构造): /share/CACHEDEV2_DATA/Container/cf-ip-optimizer/bin/cfst_linux_amd64/cfst -url https://speed.cloudflare.com/__down?bytes=10000000 -f /share/CACHEDEV2_DATA/Container/cf-ip-optimizer/bin/cfst_linux_amd64/ip.txt -dn 100 -dt 10 -n 20 -t 4 -tp 443 -o /tmp/cf41r1-sim-gbr5zmck/s1.csv
+
+--- HK.txt | updated | 0 行 | 0 字节 ---
+(空文件，0 字节)
+
+--- JP.txt | updated | 0 行 | 0 字节 ---
+(空文件，0 字节)
+
+--- SG.txt | updated | 5 行 | 201 字节 ---
+108.162.192.1:443#SG-Singapore-SIN-92ms
+108.162.192.2:443#SG-Singapore-SIN-100ms
+108.162.192.3:443#SG-Singapore-SIN-40ms
+108.162.192.4:443#SG-Singapore-SIN-50ms
+108.162.192.5:443#SG-Singapore-SIN-60ms
+
+
+--- KR.txt | updated | 0 行 | 0 字节 ---
+(空文件，0 字节)
+
+--- US.txt | updated | 5 行 | 205 字节 ---
+104.16.0.1:443#US-UnitedStates-LAX-110ms
+104.16.0.2:443#US-UnitedStates-LAX-120ms
+104.16.0.3:443#US-UnitedStates-LAX-130ms
+104.16.0.4:443#US-UnitedStates-LAX-140ms
+104.16.0.5:443#US-UnitedStates-LAX-150ms
+
+
+--- global_top25.txt | updated | 25 行 | 1009 字节 ---
+172.66.0.1:443#UNKNOWN-Unknown-DEN-51ms
+172.66.0.2:443#UNKNOWN-Unknown-AMS-52ms
+172.66.0.3:443#UNKNOWN-Unknown-NA-53ms
+172.66.0.4:443#UNKNOWN-Unknown-XYZ-54ms
+172.66.0.5:443#UNKNOWN-Unknown-DEN-55ms
+172.66.0.6:443#UNKNOWN-Unknown-AMS-56ms
+108.162.192.1:443#SG-Singapore-SIN-92ms
+172.66.0.7:443#UNKNOWN-Unknown-NA-57ms
+172.66.0.8:443#UNKNOWN-Unknown-XYZ-58ms
+104.16.0.1:443#US-UnitedStates-LAX-110ms
+172.66.0.9:443#UNKNOWN-Unknown-DEN-59ms
+172.66.0.10:443#UNKNOWN-Unknown-AMS-60ms
+172.66.0.11:443#UNKNOWN-Unknown-NA-61ms
+108.162.192.2:443#SG-Singapore-SIN-100ms
+172.66.0.12:443#UNKNOWN-Unknown-XYZ-62ms
+104.16.0.2:443#US-UnitedStates-LAX-120ms
+172.66.0.13:443#UNKNOWN-Unknown-DEN-63ms
+172.66.0.14:443#UNKNOWN-Unknown-AMS-64ms
+104.16.0.3:443#US-UnitedStates-LAX-130ms
+172.66.0.15:443#UNKNOWN-Unknown-NA-65ms
+108.162.192.3:443#SG-Singapore-SIN-40ms
+108.162.192.4:443#SG-Singapore-SIN-50ms
+172.66.0.16:443#UNKNOWN-Unknown-XYZ-66ms
+172.66.0.17:443#UNKNOWN-Unknown-DEN-67ms
+104.16.0.4:443#US-UnitedStates-LAX-140ms
+
+
+目录文件清单: ['HK.txt', 'JP.txt', 'KR.txt', 'SG.txt', 'US.txt', 'global_top25.txt']
+merged.txt 存在? False
+os.replace 调用次数=6，临时文件残留=[]
+[场景 1] 六文件全部独立更新=True
+
+----- 场景 2：单文件校验失败隔离 -----
+  HK.txt             status=updated  node_count=0     reason=None
+  JP.txt             status=updated  node_count=0     reason=None
+  SG.txt             status=failed   node_count=None  reason=SafetyError: 注入故障：模拟 SG.txt 校验失败
+  KR.txt             status=updated  node_count=0     reason=None
+  US.txt             status=updated  node_count=5     reason=None
+  global_top25.txt   status=updated  node_count=25    reason=None
+  SG.txt 旧内容是否原样保留: True
+  HK.txt 是否被更新为空文件(情况A): True
+  US.txt 是否照常更新(非旧内容): True
+  失败文件列表=['SG.txt']  全部更新=False
+  临时文件残留=[]
+
+----- 场景 3：完整测速失败（CFST 退出码=1）-----
+  measurement_success=False  csv_fresh=False  csv_complete=False  failure_reason=CFST 退出码非 0 (1)，完整测速失败
+  六文件全部保持旧版本: True
+  六文件状态: {'HK.txt': 'skipped', 'JP.txt': 'skipped', 'SG.txt': 'skipped', 'KR.txt': 'skipped', 'US.txt': 'skipped', 'global_top25.txt': 'skipped'}
+
+----- 场景 3b：CSV 不完整（截断行）-----
+  csv_fresh=True  csv_complete=False  failure_reason=CSV 不完整: CSV 有 1 行截断/列数不足
+  六文件全部保持旧版本: True
+
+----- 场景 4：成功测速，地区空榜应更新为空文件 -----
+  HK.txt status=updated  node_count=0 字节数=0 内容=''
+  JP.txt status=updated  node_count=0 字节数=0 内容=''
+  KR.txt status=updated  node_count=0 字节数=0 内容=''
+  SG.txt 行数=5  global_top25.txt 行数=25
+
+----- 场景 5：临时文件 + os.replace() 原子替换 -----
+  os.replace 临时文件=.tmp-HK.txt-aqicz83e.part                同目录=True
+  os.replace 临时文件=.tmp-JP.txt-rfk_i18p.part                同目录=True
+  os.replace 临时文件=.tmp-SG.txt-zu1xrfpc.part                同目录=True
+  os.replace 临时文件=.tmp-KR.txt-wxo3esvl.part                同目录=True
+  os.replace 临时文件=.tmp-US.txt-fvixr9ir.part                同目录=True
+  os.replace 临时文件=.tmp-global_top25.txt-s5zriibq.part      同目录=True
+  调用次数=6  临时文件残留=[]  正式文件=['HK.txt', 'JP.txt', 'KR.txt', 'SG.txt', 'US.txt', 'global_top25.txt']
+  六文件 atomic_replace 全为 True: True
+  最终 TXT 权限(mode): {'HK.txt': '0o600', 'JP.txt': '0o600', 'SG.txt': '0o600', 'KR.txt': '0o600', 'US.txt': '0o600', 'global_top25.txt': '0o600'}
+
+----- 场景 6：CSV 本轮新鲜度（不误读上一轮遗留）-----
+  6a 旧 CSV 存在但本轮未生成新 CSV:
+     csv_fresh=False  measurement_success=False  failure_reason=本轮 CSV 新鲜度校验失败: 本轮 CSV 未生成
+     六 TXT 全部保持旧内容=True  历史 CSV 未变=True
+  6b 本轮路径存在但 mtime 陈旧(10 天前):
+     csv_fresh=False  failure_reason=本轮 CSV 新鲜度校验失败: 本轮 CSV 时间戳早于本轮开始（疑似上一轮遗留）  六 TXT 保持旧内容=True
+
+----- 场景 7：单榜渲染失败与单榜写入失败隔离 -----
+  7a 单榜渲染失败: {'HK.txt': 'updated', 'JP.txt': 'updated', 'SG.txt': 'failed', 'KR.txt': 'updated', 'US.txt': 'updated', 'global_top25.txt': 'updated'}
+     SG.txt 旧内容保留=True  其余五榜仍更新=True
+  7b 单榜写入失败: {'HK.txt': 'updated', 'JP.txt': 'updated', 'SG.txt': 'updated', 'KR.txt': 'failed', 'US.txt': 'updated', 'global_top25.txt': 'updated'}
+     KR.txt 旧内容保留=True  其余五榜仍更新=True  临时残留=[]
+
+----- 场景 8：数量边界 / IPv4 严格 / 表头别名 -----
+  8a 六榜全空: {'HK.txt': 0, 'JP.txt': 0, 'SG.txt': 0, 'KR.txt': 0, 'US.txt': 0, 'global_top25.txt': 0}  全部为 0 字节=True
+  8b 地区榜不足 5 / 全球榜不足 25: {'HK.txt': 0, 'JP.txt': 0, 'SG.txt': 1, 'KR.txt': 0, 'US.txt': 1, 'global_top25.txt': 2}
+  8c IPv4 严格: is_valid_ip('1.1.1.1')=True  is_valid_ip('2001:db8::1')=False  _LINE_RE(IPv6)=False
+  8d 英文表头解析+完整性统一: ok=True reason=完整
+
+----- 场景 9：本轮独立 CSV 路径 + 成功后归档 -----
+  本轮 CSV 路径 : /tmp/cf41r1-sim-gbr5zmck/.cfst-run-simulate-s9.csv
+  正式历史路径 : /tmp/cf41r1-sim-gbr5zmck/result9.csv
+  -o 实际参数  : /tmp/cf41r1-sim-gbr5zmck/.cfst-run-simulate-s9.csv
+  csv_fresh=True  csv_complete=True  csv_archived=True
+  历史 CSV 已更新为本轮内容=True  一次性路径已消失=True
+  目录内无 .cfst-run-* 残留=True  六榜状态={'HK.txt': 'updated', 'JP.txt': 'updated', 'SG.txt': 'updated', 'KR.txt': 'updated', 'US.txt': 'updated', 'global_top25.txt': 'updated'}
+
+----- 运行状态 JSON 样例（场景 2，含失败文件）-----
+{
+  "all_files_updated": false,
+  "cfst_exit_code": 0,
+  "csv_complete": true,
+  "csv_fresh": true,
+  "csv_total_rows": 46,
+  "failed_files": [
+    "SG.txt"
+  ],
+  "fastest_node": {
+    "colo": "DEN",
+    "ip": "172.66.0.1",
+    "latency_ms": 51.0,
+    "loss": 0.0,
+    "node": "172.66.0.1:443#UNKNOWN-Unknown-DEN-51ms",
+    "region": "UNKNOWN",
+    "speed_mb_s": 35.0
+  },
+  "files": {
+    "HK.txt": {
+      "atomic_replace": true,
+      "node_count": 0,
+      "reason": null,
+      "status": "updated",
+      "temp_file": ".tmp-HK.txt-4_7a02si.part"
+    },
+    "JP.txt": {
+      "atomic_replace": true,
+      "node_count": 0,
+      "reason": null,
+      "status": "updated",
+      "temp_file": ".tmp-JP.txt-muz2nwea.part"
+    },
+    "KR.txt": {
+      "atomic_replace": true,
+      "node_count": 0,
+      "reason": null,
+      "status": "updated",
+      "temp_file": ".tmp-KR.txt-dzf1agdi.part"
+    },
+    "SG.txt": {
+      "atomic_replace": false,
+      "node_count": null,
+      "reason": "SafetyError: 注入故障：模拟 SG.txt 校验失败",
+      "status": "failed",
+      "temp_file": ".tmp-SG.txt-r3mf0qat.part"
+    },
+    "US.txt": {
+      "atomic_replace": true,
+      "node_count": 5,
+      "reason": null,
+      "status": "updated",
+      "temp_file": ".tmp-US.txt-jwv50op1.part"
+    },
+    "global_top25.txt": {
+      "atomic_replace": true,
+      "node_count": 25,
+      "reason": null,
+      "status": "updated",
+      "temp_file": ".tmp-global_top25.txt-jr2ayr6o.part"
+    }
+  },
+  "measurement_success": true,
+  "run_time": "2026-11-22T17:34:13+08:00",
+  "valid_ip_count": 36
+}
+
+=== 模拟结束：临时目录已自动清理；NAS data/ 与正式订阅文件未被写入 ===
+SIMULATE_EXIT=0
+########## D. --run 应被拒绝 ##########
+[拒绝] --run（真实测速）在阶段 4.1 禁止；须在阶段 4.4 获得明确授权后启用。
+RUN_EXIT=2
+----- STDERR -----
+Could not chdir to home directory /share/homes/HAKU: No such file or directory
+----- REMOTE_EXIT_CODE=0 -----
