@@ -39,5 +39,5 @@ services:
 
 networks:
   cf-ip-optimizer-net:
-    name: cf-ip-optimizer-net
+    name: cf-ip-optimizer-runtime-net
     driver: bridge
