@@ -80,6 +80,11 @@ def rank(rows):
       r.loss_ratio is None,r.loss_ratio if r.loss_ratio is not None else float("inf"),
       int(ipaddress.IPv4Address(r.ip))))
 
+def select_zero_loss(rows: list[Record], limit: int) -> list[Record]:
+    if limit < 1: raise PipelineError("Selection limit must be positive")
+    eligible=[r for r in rows if r.loss_ratio == 0.0 and r.speed_mbps is not None and r.latency_ms is not None]
+    return rank(eligible)[:limit]
+
 def atomic_write(path: Path, content: str):
     path.parent.mkdir(parents=True,exist_ok=True)
     fd,tmp=tempfile.mkstemp(prefix="."+path.name+".",suffix=".tmp",dir=path.parent)
@@ -132,8 +137,7 @@ def main():
         stage1_cfg=cfg["stage1"]; stage1_cfg["input_path"]=str(Path(c["input_file"]))
         stage1_csv=run_cfst(c,stage1_cfg,wd,1)
         first=parse_csv(stage1_csv,int(c.get("port",443)))
-        first_ok=[r for r in first if r.loss_ratio == max_loss and r.speed_mbps is not None and r.latency_ms is not None]
-        first_top=rank(first_ok)[:first_n]
+        first_top=select_zero_loss(first,first_n)
         if len(first_top)<second_n:
             raise PipelineError(f"Only {len(first_top)} first-pass nodes meet 0% loss; need {second_n} for the configured retest")
         retest=first_top[:second_n]
@@ -144,8 +148,7 @@ def main():
         second=parse_csv(stage2_csv,int(c.get("port",443)))
         retest_ips={r.ip for r in retest}
         if any(r.ip not in retest_ips for r in second): raise PipelineError("Second-pass CSV contains an IP not selected for retest")
-        second_ok=[r for r in second if r.loss_ratio == max_loss and r.speed_mbps is not None and r.latency_ms is not None]
-        final=rank(second_ok)
+        final=select_zero_loss(second,second_n)
         snap={"schema_version":1,"run_id":run_id,"created_at":datetime.now(timezone.utc).isoformat(),
           "cfst_version":c.get("version","2.3.5"),"policy":{"first_top_n":first_n,"second_top_n":second_n,"max_loss_ratio":max_loss},
           "stage1_csv_sha256":hashlib.sha256(stage1_csv.read_bytes()).hexdigest(),
