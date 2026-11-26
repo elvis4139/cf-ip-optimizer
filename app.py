@@ -45,7 +45,7 @@ def parse_csv(path: Path, port: int) -> list[Record]:
         try: content=path.read_text(encoding=enc); break
         except UnicodeDecodeError: pass
     if content is None: raise PipelineError("Unsupported CFST CSV encoding")
-    try: dialect=csv.Sniffer().sniff(content[:8192],delimiters=",;\\t")
+    try: dialect=csv.Sniffer().sniff(content[:8192],delimiters=",;\t")
     except csv.Error: dialect=csv.excel
     reader=csv.DictReader(content.splitlines(),dialect=dialect)
     if not reader.fieldnames: raise PipelineError("CFST CSV has no header")
@@ -84,7 +84,7 @@ def atomic_write(path: Path, content: str):
     path.parent.mkdir(parents=True,exist_ok=True)
     fd,tmp=tempfile.mkstemp(prefix="."+path.name+".",suffix=".tmp",dir=path.parent)
     try:
-        with os.fdopen(fd,"w",encoding="utf-8",newline="\\n") as f:
+        with os.fdopen(fd,"w",encoding="utf-8",newline="\n") as f:
             f.write(content); f.flush(); os.fsync(f.fileno())
         os.replace(tmp,path)
     except Exception:
@@ -117,7 +117,7 @@ def subscription_line(r: Record):
 
 def main():
     ap=argparse.ArgumentParser(description="Two-pass CFST v2.3.5 orchestration")
-    ap.add_argument("--config",default="/config/config.toml"); ap.add_argument("--parse-only",action="store_true")
+    ap.add_argument("--config",default="/config/config.toml")
     ns=ap.parse_args()
     try:
         cfg=tomllib.loads(Path(ns.config).read_text(encoding="utf-8"))
@@ -125,40 +125,41 @@ def main():
         first_n=int(policy.get("first_top_n",80)); second_n=int(policy.get("second_top_n",50))
         max_loss=float(policy.get("max_loss_ratio",0))
         if first_n<1 or second_n<1 or second_n>first_n or max_loss!=0:
-            raise PipelineError("Current approved defaults require first_top_n>=second_top_n>=1 and max_loss_ratio=0")
+            raise PipelineError("Policy must use positive 80/50-compatible counts and exactly 0% loss")
         root=Path(cfg.get("paths",{}).get("work_dir","/work/runs")); root.mkdir(parents=True,exist_ok=True)
         run_id=datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")+"-"+uuid.uuid4().hex[:8]
         wd=root/run_id; wd.mkdir(mode=0o700)
-        if ns.parse_only: raise PipelineError("Offline parse-only mode is not implemented for two-pass runs yet")
         stage1_cfg=cfg["stage1"]; stage1_cfg["input_path"]=str(Path(c["input_file"]))
         stage1_csv=run_cfst(c,stage1_cfg,wd,1)
         first=parse_csv(stage1_csv,int(c.get("port",443)))
         first_ok=[r for r in first if r.loss_ratio == max_loss and r.speed_mbps is not None and r.latency_ms is not None]
         first_top=rank(first_ok)[:first_n]
-        if not first_top: raise PipelineError("No first-pass nodes meet 0% loss and complete speed/latency criteria")
+        if len(first_top)<second_n:
+            raise PipelineError(f"Only {len(first_top)} first-pass nodes meet 0% loss; need {second_n} for the configured retest")
+        retest=first_top[:second_n]
         candidate_file=wd/"stage2_candidates.txt"
-        atomic_write(candidate_file,"".join(r.ip+"\\n" for r in first_top))
+        atomic_write(candidate_file,"".join(r.ip+"\n" for r in retest))
         stage2_cfg=cfg["stage2"]; stage2_cfg["input_path"]=str(candidate_file)
         stage2_csv=run_cfst(c,stage2_cfg,wd,2)
         second=parse_csv(stage2_csv,int(c.get("port",443)))
-        first_ips={r.ip for r in first_top}
-        if any(r.ip not in first_ips for r in second): raise PipelineError("Second-pass CSV contains an IP not selected in first pass")
+        retest_ips={r.ip for r in retest}
+        if any(r.ip not in retest_ips for r in second): raise PipelineError("Second-pass CSV contains an IP not selected for retest")
         second_ok=[r for r in second if r.loss_ratio == max_loss and r.speed_mbps is not None and r.latency_ms is not None]
-        final=rank(second_ok)[:second_n]
-        if not final: raise PipelineError("No second-pass nodes meet 0% loss and complete measurement criteria")
+        final=rank(second_ok)
         snap={"schema_version":1,"run_id":run_id,"created_at":datetime.now(timezone.utc).isoformat(),
           "cfst_version":c.get("version","2.3.5"),"policy":{"first_top_n":first_n,"second_top_n":second_n,"max_loss_ratio":max_loss},
           "stage1_csv_sha256":hashlib.sha256(stage1_csv.read_bytes()).hexdigest(),
           "stage2_csv_sha256":hashlib.sha256(stage2_csv.read_bytes()).hexdigest(),
-          "stage1_records":[asdict(x) for x in first],"stage1_eligible":[asdict(x) for x in first_top],
+          "stage1_records":[asdict(x) for x in first],"stage1_top80":[asdict(x) for x in first_top],
+          "stage2_retest_candidates":[asdict(x) for x in retest],
           "stage2_records":[asdict(x) for x in second],"final_records":[asdict(x) for x in final]}
-        atomic_write(wd/"measurements.json",json.dumps(snap,ensure_ascii=False,indent=2)+"\\n")
+        atomic_write(wd/"measurements.json",json.dumps(snap,ensure_ascii=False,indent=2)+"\n")
         if out.get("enabled",False):
             lines=[subscription_line(x) for x in final]
-            atomic_write(Path(out.get("path","/output/nodes.txt")),"\\n".join(lines)+"\\n")
-        print(json.dumps({"run_id":run_id,"stage1_records":len(first),"stage1_eligible":len(first_top),
-          "stage2_records":len(second),"final_nodes":len(final),"published":bool(out.get("enabled",False)),
-          "snapshot":str(wd/"measurements.json")},ensure_ascii=False,indent=2))
+            atomic_write(Path(out.get("path","/output/nodes.txt")),"\n".join(lines)+("\n" if lines else ""))
+        print(json.dumps({"run_id":run_id,"stage1_records":len(first),"stage1_zero_loss_top80":len(first_top),
+          "stage2_retest_candidates":len(retest),"stage2_records":len(second),"final_nodes":len(final),
+          "published":bool(out.get("enabled",False)),"snapshot":str(wd/"measurements.json")},ensure_ascii=False,indent=2))
         return 0
     except (PipelineError,OSError,KeyError,ValueError,subprocess.SubprocessError) as e:
         print("ERROR:",e,file=sys.stderr); return 2
