@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+
+data/input/*
+!data/input/.gitkeep
+data/output/*
+!data/output/.gitkeep
+
+work/
+*.csv
+*.log
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
