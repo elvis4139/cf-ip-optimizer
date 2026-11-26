@@ -1,4 +1,4 @@
-# Two-pass policy defaults agreed 2026-11-26. CFST flags must be verified against v2.3.5 help.
+# Agreed policy defaults: first get top 80, then retest the top 50 from that set.
 [cfst]
 version = "2.3.5"
 binary = "/usr/local/bin/cfst"
@@ -12,11 +12,11 @@ second_top_n = 50
 max_loss_ratio = 0.0
 
 [stage1]
-# Replace with exact CFST v2.3.5 arguments. Use {input}, {csv}, {run_dir} placeholders.
+# Exact CFST v2.3.5 arguments to be set after checking `cfst -h`. Use {input}, {csv}, {run_dir}.
 args = []
 
 [stage2]
-# Must consume the generated stage2_candidates.txt via {input}.
+# Same; {input} is the generated list of the first-pass fastest 50 among top80.
 args = []
 
 [paths]
