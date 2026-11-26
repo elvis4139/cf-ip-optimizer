@@ -1,9 +1,8 @@
 name: cf-ip-optimizer
-
 services:
-  cfst:
+  optimizer:
     profiles: ["manual"]
-    image: cf-ip-optimizer:cfst-2.3.5
+    image: cf-ip-optimizer:stage2
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,17 +12,15 @@ services:
     init: true
     restart: "no"
     read_only: true
-    cap_drop:
-      - ALL
-    security_opt:
-      - no-new-privileges:true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m,uid=1000,gid=100
-      - /work:rw,noexec,nosuid,size=256m,uid=1000,gid=100
-    working_dir: /work
+      - /work:rw,noexec,nosuid,size=512m,uid=1000,gid=100
     volumes:
       - ./data/input:/input:ro
       - ./data/output:/output:rw
+      - ./config:/config:ro
     environment:
       HTTP_PROXY: ""
       HTTPS_PROXY: ""
@@ -33,10 +30,8 @@ services:
       all_proxy: ""
       NO_PROXY: "*"
       no_proxy: "*"
-    networks:
-      - cf-ip-optimizer-net
-    command: ["-h"]
-
+    networks: [cf-ip-optimizer-net]
+    command: ["--help"]
 networks:
   cf-ip-optimizer-net:
     name: cf-ip-optimizer-runtime-net
