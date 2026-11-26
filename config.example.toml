@@ -1,0 +1,27 @@
+# Two-pass policy defaults agreed 2026-11-26. CFST flags must be verified against v2.3.5 help.
+[cfst]
+version = "2.3.5"
+binary = "/usr/local/bin/cfst"
+port = 443
+input_file = "/input/ipv4.txt"
+process_timeout_seconds = 1800
+
+[selection]
+first_top_n = 80
+second_top_n = 50
+max_loss_ratio = 0.0
+
+[stage1]
+# Replace with exact CFST v2.3.5 arguments. Use {input}, {csv}, {run_dir} placeholders.
+args = []
+
+[stage2]
+# Must consume the generated stage2_candidates.txt via {input}.
+args = []
+
+[paths]
+work_dir = "/work/runs"
+
+[output]
+enabled = false
+path = "/output/nodes.txt"
